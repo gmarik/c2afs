@@ -2,8 +2,8 @@
 
 let puts = console.log
 
-let jstr = JSON.stringify
-let fail   = (have:any, want:any, msg:string = "") => {
+const jstr = JSON.stringify
+const fail   = (have:any, want:any, msg:string = "") => {
   let q = (v:any):string => {
     if (typeof v  === "undefined" || v === null) { return v; }
     if (typeof v  === "string") { return v; }
@@ -12,10 +12,10 @@ let fail   = (have:any, want:any, msg:string = "") => {
   
   puts(new Error(`${msg}\nhave: ${q(have)}\nwant: ${q(want)}\n`));
 }
-let assert = (have:any, want:any, msg:string = "") => { if (want !== have) fail(have, want, msg) }
-let refute = (have:any, want:any, msg:string = "") => { if (want === have) fail(have, want, msg) }
+const assert = (have:any, want:any, msg:string = "") => { if (want !== have) fail(have, want, msg) }
+const refute = (have:any, want:any, msg:string = "") => { if (want === have) fail(have, want, msg) }
 
-let test = (name: string, callback: () => void) => callback();
+const test = (name: string, callback: () => void) => callback();
 
 export interface Parser<T> {
   parse(src: Source): ParseResult<T> | null;
