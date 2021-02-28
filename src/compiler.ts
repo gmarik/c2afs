@@ -75,6 +75,13 @@ export class Parser<T> {
   static constant<U>(value: U): Parser<U> {
     return new Parser(source => new ParseResult(value, source));
   }
+
+  static error<U>(msg: string): Parser<U> {
+    // Explore: A better implementation of the error combinator would inspect the source,
+    // convert the source index into a line-column pair, and display it together
+    // with the offending line and some context.
+    return new Parser(() => { throw Error(msg) })
+  }
 }
 
 test("Parser.regex: sticky regex fails to parse from the index", () => {
@@ -92,4 +99,13 @@ test("Parser.constant: delegates to Source.match", () => {
   let r = parse("hi", Parser.constant("OK"))
   refute(r, null);
   assert(JSON.stringify(r), `{"value":"OK","source":{"string":"hi","index":0}}`)
+})
+
+test("Parser.error: throws an error", () => {
+  try {
+    parse("hi", Parser.error("oops"))
+    fail(null, null, "error expected")
+  } catch(e) {
+    assert(e.message, "oops")
+  }
 })
