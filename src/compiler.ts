@@ -4,16 +4,15 @@ let puts = console.log
 
 let fail   = (have:any, want:any, msg:string = "") => {
   let q = (v:any):string => {
-    if (typeof v  === "string") {
-      return v;
-    }
+    if (typeof v  === "undefined" || v === null) { return v; }
+    if (typeof v  === "string") { return v; }
     return JSON.stringify(v); 
   }
   
   puts(new Error(`${msg}\nhave: ${q(have)}\nwant: ${q(want)}\n`));
 }
-let assert = (have:any, want:any, msg:string = "") => { if (want !== have) fail(want, have, msg) }
-let refute = (have:any, want:any, msg:string = "") => { if (want === have) fail(want, have, msg) }
+let assert = (have:any, want:any, msg:string = "") => { if (want !== have) fail(have, want, msg) }
+let refute = (have:any, want:any, msg:string = "") => { if (want === have) fail(have, want, msg) }
 
 let test = (name: string, callback: () => void) => callback();
 
