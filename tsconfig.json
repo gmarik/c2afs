@@ -1,0 +1,12 @@
+{
+  "compilerOptions": {
+    "strict": true,
+    "target": "ESNext",
+    "module": "commonjs",
+    "outDir": "build"
+  },
+  // https://www.typescriptlang.org/docs/handbook/tsconfig-json.html
+  // otherwise this config won't be picked up with explicit tcs args
+  // https://github.com/microsoft/TypeScript/issues/5497
+  "include": ["src/**/*"],
+}
