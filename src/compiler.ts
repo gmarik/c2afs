@@ -2,6 +2,7 @@
 
 let puts = console.log
 
+let jstr = JSON.stringify
 let fail   = (have:any, want:any, msg:string = "") => {
   let q = (v:any):string => {
     if (typeof v  === "undefined" || v === null) { return v; }
