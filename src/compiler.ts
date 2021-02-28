@@ -61,3 +61,23 @@ test("Source.match: advances index", () => {
 })
 
 
+export class Parser<T> {
+  constructor(public parse: (src: Source) => (ParseResult<T> | null)) { }
+
+  static regexp(regexp: RegExp): Parser<string> {
+    return new Parser((src) => src.match(regexp));
+  }
+}
+
+test("Parser.regex: sticky regex fails to parse from the index", () => {
+  let src = new Source("hi hello1 bye2", 0)
+  let r = Parser.regexp(/hello[0-9]/y).parse(src)
+  assert(r, null);
+})
+
+test("Parser.regex: delegates to Source.match", () => {
+  let src = new Source("hello1 bye2", 0)
+  let r = Parser.regexp(/hello[0-9]/y).parse(src)
+  refute(r, null);
+  assert(JSON.stringify(r), `{"value":"hello1","source":{"string":"hello1 bye2","index":6}}`)
+})
