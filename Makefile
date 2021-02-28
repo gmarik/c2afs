@@ -1,4 +1,5 @@
 IMG=c2a:dev
+RUN=docker run --rm -it -v ${PWD}:/app --workdir=/app $(IMG)
 
 test: build/compiler.js
 	node $<
@@ -6,11 +7,13 @@ test: build/compiler.js
 watch:
 	nodemon --watch "src/*.ts" --ext "ts,json" --ignore "src/**/*.spec.ts" --exec "ts-node src/*.ts"
 
+dw:
+	$(RUN) make watch
+
 build/%.js: %.ts
 	tsc
 
 .PHONY: shell
-shell: RUN=docker run --rm -it -v ${PWD}:/app --workdir=/app $(IMG)
 shell:
 	 $(RUN) /bin/bash
 
