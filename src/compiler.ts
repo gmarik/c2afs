@@ -71,6 +71,10 @@ export class Parser<T> {
   static regexp(regexp: RegExp): Parser<string> {
     return new Parser((src) => src.match(regexp));
   }
+
+  static constant<U>(value: U): Parser<U> {
+    return new Parser(source => new ParseResult(value, source));
+  }
 }
 
 test("Parser.regex: sticky regex fails to parse from the index", () => {
@@ -82,4 +86,10 @@ test("Parser.regex: delegates to Source.match", () => {
   let r = parse("hello1 bye2", Parser.regexp(/hello[0-9]/y))
   refute(r, null)
   assert(JSON.stringify(r), `{"value":"hello1","source":{"string":"hello1 bye2","index":6}}`)
+})
+
+test("Parser.constant: delegates to Source.match", () => {
+  let r = parse("hi", Parser.constant("OK"))
+  refute(r, null);
+  assert(JSON.stringify(r), `{"value":"OK","source":{"string":"hi","index":0}}`)
 })
