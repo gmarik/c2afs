@@ -43,7 +43,6 @@ export class Source {
   }
 }
 
-
 test("Source: idempotent matches", () => {
   let src = new Source('  let', 2)
   let result1 = src.match(/let/y);
@@ -82,6 +81,16 @@ export class Parser<T> {
     // with the offending line and some context.
     return new Parser(() => { throw Error(msg) })
   }
+
+  or(p:Parser<T>): Parser<T> {
+    return new Parser((src: Source) => {
+      let pr = this.parse(src)
+      if (pr) {
+        return pr
+      }
+      return p.parse(src);
+    })
+  }
 }
 
 test("Parser.regex: sticky regex fails to parse from the index", () => {
@@ -108,4 +117,9 @@ test("Parser.error: throws an error", () => {
   } catch(e) {
     assert(e.message, "oops")
   }
+})
+
+test("Parser#or: choice parser", () => {
+  let r = parse("hello world", Parser.regexp(/world/y).or(Parser.regexp(/hello/y)))
+  assert(JSON.stringify(r), `{"value":"hello","source":{"string":"hello world","index":5}}`)
 })
