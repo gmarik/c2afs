@@ -59,7 +59,7 @@ test("Source.match: advances index", () => {
   assert(r, null);
 })
 
-const parse = (s:string, p: Parser<string>): (ParseResult<string>|null) => {
+function parse<U>(s:string, p: Parser<U>): (ParseResult<U>|null) {
   return p.parse(new Source(s, 0))
 }
 
