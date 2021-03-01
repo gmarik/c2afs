@@ -91,6 +91,18 @@ export class Parser<T> {
       return p.parse(src);
     })
   }
+
+  static zeroOrMore<U>(p: Parser<U>): Parser<Array<U>> {
+    return new Parser(src => {
+      let a = []
+      let m
+      while (m = p.parse(src)) {
+        src = m.source
+        a.push(m.value)
+      }
+      return new ParseResult(a, src)
+    })
+  }
 }
 
 test("Parser.regex: sticky regex fails to parse from the index", () => {
@@ -120,4 +132,9 @@ test("Parser.error: throws an error", () => {
 test("Parser#or: choice parser", () => {
   let r = parse("hello world", Parser.regexp(/world/y).or(Parser.regexp(/hello/y)))
   assert(JSON.stringify(r), `{"value":"hello","source":{"string":"hello world","index":5}}`)
+})
+
+test("Parser.zeroOrMore:", () => {
+  let r = parse("12345 hello", Parser.zeroOrMore(Parser.regexp(/\d/y)))
+  assert(JSON.stringify(r), `{"value":["1","2","3","4","5"],"source":{"string":"12345 hello","index":5}}`)
 })
