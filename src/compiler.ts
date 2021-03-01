@@ -88,6 +88,14 @@ export class Parser<T> {
       return new ParseResult(a, src)
     })
   }
+
+  bind<U>(callback: (value: T) => Parser<U>): Parser<U> {
+    return new Parser(src => {
+      let m = this.parse(src)
+      if (!m) { return null }
+      return callback(m.value).parse(m.source)
+    })
+  }
 }
 
 test("Source: idempotent matches", () => {
@@ -137,5 +145,13 @@ test("Parser#or: choice parser", () => {
 
 test("Parser.zeroOrMore:", () => {
   let r = parse("12345 hello", Parser.zeroOrMore(Parser.regexp(/\d/y)))
+  assert(JSON.stringify(r), `{"value":["1","2","3","4","5"],"source":{"string":"12345 hello","index":5}}`)
+})
+
+test("Parser.bind:", () => {
+  let r =  parse("12345 hello", Parser.zeroOrMore(Parser.regexp(/\d/y)).bind((v) => {
+    assert(v, ["1", "2", "3", "4", "5"])
+    return Parser.constant(v)
+  }))
   assert(JSON.stringify(r), `{"value":["1","2","3","4","5"],"source":{"string":"12345 hello","index":5}}`)
 })
