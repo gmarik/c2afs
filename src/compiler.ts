@@ -7,13 +7,14 @@ const fail   = (have:any, want:any, msg:string = "") => {
   let q = (v:any):string => {
     if (typeof v  === "undefined" || v === null) { return v; }
     if (typeof v  === "string") { return v; }
-    return JSON.stringify(v); 
+    return jstr(v);
   }
   
   puts(new Error(`${msg}\nhave: ${q(have)}\nwant: ${q(want)}\n`));
 }
-const assert = (have:any, want:any, msg:string = "") => { if (want !== have) fail(have, want, msg) }
-const refute = (have:any, want:any, msg:string = "") => { if (want === have) fail(have, want, msg) }
+const deepEqual = (a:any, b:any):boolean => { return jstr(a) === jstr(b) }
+const assert = (have:any, want:any, msg:string = "") => { if (!deepEqual(have, want)) fail(have, want, msg) }
+const refute = (have:any, want:any, msg:string = "") => { if ( deepEqual(have, want)) fail(have, want, msg) }
 
 const test = (name: string, callback: () => void) => callback();
 
