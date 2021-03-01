@@ -43,22 +43,6 @@ export class Source {
   }
 }
 
-test("Source: idempotent matches", () => {
-  let src = new Source('  let', 2)
-  let result1 = src.match(/let/y);
-  assert(JSON.stringify(result1), `{"value":"let","source":{"string":"  let","index":5}}`);
-
-  let result2 = src.match(/let/y);
-  assert(JSON.stringify(result2), `{"value":"let","source":{"string":"  let","index":5}}`);
-})
-
-test("Source.match: advances index", () => {
-  let src = new Source('  let', 2)
-  let re = /let/y
-  let r = src.match(re)!.source.match(re);
-  assert(r, null);
-})
-
 function parse<U>(s:string, p: Parser<U>): (ParseResult<U>|null) {
   return p.parse(new Source(s, 0))
 }
@@ -104,6 +88,22 @@ export class Parser<T> {
     })
   }
 }
+
+test("Source: idempotent matches", () => {
+  let src = new Source('  let', 2)
+  let result1 = src.match(/let/y);
+  assert(JSON.stringify(result1), `{"value":"let","source":{"string":"  let","index":5}}`);
+
+  let result2 = src.match(/let/y);
+  assert(JSON.stringify(result2), `{"value":"let","source":{"string":"  let","index":5}}`);
+})
+
+test("Source.match: advances index", () => {
+  let src = new Source('  let', 2)
+  let re = /let/y
+  let r = src.match(re)!.source.match(re);
+  assert(r, null);
+})
 
 test("Parser.regex: sticky regex fails to parse from the index", () => {
   let r = parse("hi hello1 bye2", Parser.regexp(/hello[0-9]/y))
