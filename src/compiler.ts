@@ -105,6 +105,17 @@ export class Parser<T> {
     // NOTE: damn this is confusing
     return this.bind((v) => Parser.constant(callback(v)));
   }
+
+  static maybe<U>(p: Parser<U | null>): Parser<U | null> {
+    // src/compiler.ts:110:22 - error TS2345: Argument of type 'Parser<null>' is not assignable to parameter of type 'Parser<U>'.
+    //   Type 'null' is not assignable to type 'U'.
+    //     'U' could be instantiated with an arbitrary type which could be unrelated to 'null'.
+
+    //      return parser.or(Parser.constant(null))
+    //                       ~~~~~~~~~~~~~~~~~~~~~
+    // adding `null` to `p: Parser<U>` so it compiles
+    return p.or(Parser.constant(null))
+  }
 }
 
 test("Source: idempotent matches", () => {
@@ -187,4 +198,10 @@ test("Parser.map: pair example", () => {
     );
   let r = parse("1,2", parser)
   assert(JSON.stringify(r), `{"value":["1","2"],"source":{"string":"1,2","index":3}}`)
+})
+
+test("Parser.constant:", () => {
+  let {maybe,regexp} = Parser
+  let r =  parse("1", maybe(regexp(/\D/y)))
+  assert(JSON.stringify(r), `{"value":null,"source":{"string":"1","index":0}}`)
 })
