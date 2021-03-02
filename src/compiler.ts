@@ -100,6 +100,11 @@ export class Parser<T> {
   and<U>(parser: Parser<U>): Parser<U> {
     return this.bind((_) => parser);
   }
+
+  map<U>(callback: (t:T) => U): Parser<U> {
+    // NOTE: damn this is confusing
+    return this.bind((v) => Parser.constant(callback(v)));
+  }
 }
 
 test("Source: idempotent matches", () => {
@@ -165,4 +170,9 @@ test("Parser.and:", () => {
   // NOTE: returns the last match as every match needs to be captured
   let r =  parse("12345hello", Parser.regexp(/\d+/y).and(Parser.regexp(/\w+/y)))
   assert(JSON.stringify(r), `{"value":"hello","source":{"string":"12345hello","index":10}}`)
+})
+
+test("Parser.map:", () => {
+  let r =  parse("12", Parser.regexp(/\d/y).map((v) => v))
+  assert(JSON.stringify(r), `{"value":"1","source":{"string":"12","index":1}}`)
 })
