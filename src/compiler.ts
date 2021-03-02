@@ -96,6 +96,10 @@ export class Parser<T> {
       return callback(m.value).parse(m.source)
     })
   }
+
+  and<U>(parser: Parser<U>): Parser<U> {
+    return this.bind((_) => parser);
+  }
 }
 
 test("Source: idempotent matches", () => {
@@ -154,4 +158,11 @@ test("Parser.bind:", () => {
     return Parser.constant(v)
   }))
   assert(JSON.stringify(r), `{"value":["1","2","3","4","5"],"source":{"string":"12345 hello","index":5}}`)
+})
+
+test("Parser.and:", () => {
+  // NOTE: spaces aren't ignored
+  // NOTE: returns the last match as every match needs to be captured
+  let r =  parse("12345hello", Parser.regexp(/\d+/y).and(Parser.regexp(/\w+/y)))
+  assert(JSON.stringify(r), `{"value":"hello","source":{"string":"12345hello","index":10}}`)
 })
