@@ -176,3 +176,15 @@ test("Parser.map:", () => {
   let r =  parse("12", Parser.regexp(/\d/y).map((v) => v))
   assert(JSON.stringify(r), `{"value":"1","source":{"string":"12","index":1}}`)
 })
+
+test("Parser.map: pair example", () => {
+  let {regexp} = Parser
+  let parser = regexp(/[0-9]+/y).
+    bind((first) =>
+      regexp(/,/y).
+      and(regexp(/[0-9]+/y)).
+      map((second) => [first, second])
+    );
+  let r = parse("1,2", parser)
+  assert(JSON.stringify(r), `{"value":["1","2"],"source":{"string":"1,2","index":3}}`)
+})
