@@ -47,6 +47,17 @@ export class Source {
 export class Parser<T> {
   constructor(public parse: (src: Source) => (ParseResult<T> | null)) { }
 
+  parseStringToCompletion(str: string): T | Error {
+    let src = new Source(str, 0)
+    let r = this.parse(src)
+    if (!r) { return Error(`Parse error at index 0`) }
+
+    let index = r.source.index;
+    if (index != r.source.string.length) { throw Error("Parse error at index " + index); }
+
+    return r.value;
+  }
+
   static regexp(regexp: RegExp): Parser<string> {
     return new Parser((src) => src.match(regexp));
   }
@@ -204,4 +215,11 @@ test("Parser.constant:", () => {
   let {maybe,regexp} = Parser
   let r =  parse("1", maybe(regexp(/\D/y)))
   assert(jstr(r), `{"value":null,"source":{"string":"1","index":0}}`)
+})
+
+test("Parser.parseStringToCompletion:", () => {
+  let {regexp} = Parser
+  // NOTE: returns the last value
+  let v = regexp(/\d/y).and(regexp(/\w/y)).parseStringToCompletion("1b")
+  assert(v, `b`)
 })
