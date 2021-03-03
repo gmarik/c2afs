@@ -44,11 +44,6 @@ export class Source {
   }
 }
 
-function parse<U>(s:string, p: Parser<U>): (ParseResult<U>|null) {
-  return p.parse(new Source(s, 0))
-}
-
-
 export class Parser<T> {
   constructor(public parse: (src: Source) => (ParseResult<T> | null)) { }
 
@@ -118,13 +113,18 @@ export class Parser<T> {
   }
 }
 
+
+function parse<U>(s:string, p: Parser<U>): (ParseResult<U>|null) {
+  return p.parse(new Source(s, 0))
+}
+
 test("Source: idempotent matches", () => {
   let src = new Source('  let', 2)
   let result1 = src.match(/let/y);
-  assert(JSON.stringify(result1), `{"value":"let","source":{"string":"  let","index":5}}`);
+  assert(jstr(result1), `{"value":"let","source":{"string":"  let","index":5}}`);
 
   let result2 = src.match(/let/y);
-  assert(JSON.stringify(result2), `{"value":"let","source":{"string":"  let","index":5}}`);
+  assert(jstr(result2), `{"value":"let","source":{"string":"  let","index":5}}`);
 })
 
 test("Source.match: advances index", () => {
@@ -141,12 +141,12 @@ test("Parser.regex: sticky regex fails to parse from the index", () => {
 
 test("Parser.regex: delegates to Source.match", () => {
   let r = parse("hello1 bye2", Parser.regexp(/hello[0-9]/y))
-  assert(JSON.stringify(r), `{"value":"hello1","source":{"string":"hello1 bye2","index":6}}`)
+  assert(jstr(r), `{"value":"hello1","source":{"string":"hello1 bye2","index":6}}`)
 })
 
 test("Parser.constant: delegates to Source.match", () => {
   let r = parse("hi", Parser.constant("OK"))
-  assert(JSON.stringify(r), `{"value":"OK","source":{"string":"hi","index":0}}`)
+  assert(jstr(r), `{"value":"OK","source":{"string":"hi","index":0}}`)
 })
 
 test("Parser.error: throws an error", () => {
@@ -160,12 +160,12 @@ test("Parser.error: throws an error", () => {
 
 test("Parser#or: choice parser", () => {
   let r = parse("hello world", Parser.regexp(/world/y).or(Parser.regexp(/hello/y)))
-  assert(JSON.stringify(r), `{"value":"hello","source":{"string":"hello world","index":5}}`)
+  assert(jstr(r), `{"value":"hello","source":{"string":"hello world","index":5}}`)
 })
 
 test("Parser.zeroOrMore:", () => {
   let r = parse("12345 hello", Parser.zeroOrMore(Parser.regexp(/\d/y)))
-  assert(JSON.stringify(r), `{"value":["1","2","3","4","5"],"source":{"string":"12345 hello","index":5}}`)
+  assert(jstr(r), `{"value":["1","2","3","4","5"],"source":{"string":"12345 hello","index":5}}`)
 })
 
 test("Parser.bind:", () => {
@@ -173,19 +173,19 @@ test("Parser.bind:", () => {
     assert(v, ["1", "2", "3", "4", "5"])
     return Parser.constant(v)
   }))
-  assert(JSON.stringify(r), `{"value":["1","2","3","4","5"],"source":{"string":"12345 hello","index":5}}`)
+  assert(jstr(r), `{"value":["1","2","3","4","5"],"source":{"string":"12345 hello","index":5}}`)
 })
 
 test("Parser.and:", () => {
   // NOTE: spaces aren't ignored
   // NOTE: returns the last match as every match needs to be captured
   let r =  parse("12345hello", Parser.regexp(/\d+/y).and(Parser.regexp(/\w+/y)))
-  assert(JSON.stringify(r), `{"value":"hello","source":{"string":"12345hello","index":10}}`)
+  assert(jstr(r), `{"value":"hello","source":{"string":"12345hello","index":10}}`)
 })
 
 test("Parser.map:", () => {
   let r =  parse("12", Parser.regexp(/\d/y).map((v) => v))
-  assert(JSON.stringify(r), `{"value":"1","source":{"string":"12","index":1}}`)
+  assert(jstr(r), `{"value":"1","source":{"string":"12","index":1}}`)
 })
 
 test("Parser.map: pair example", () => {
@@ -197,11 +197,11 @@ test("Parser.map: pair example", () => {
       map((second) => [first, second])
     );
   let r = parse("1,2", parser)
-  assert(JSON.stringify(r), `{"value":["1","2"],"source":{"string":"1,2","index":3}}`)
+  assert(jstr(r), `{"value":["1","2"],"source":{"string":"1,2","index":3}}`)
 })
 
 test("Parser.constant:", () => {
   let {maybe,regexp} = Parser
   let r =  parse("1", maybe(regexp(/\D/y)))
-  assert(JSON.stringify(r), `{"value":null,"source":{"string":"1","index":0}}`)
+  assert(jstr(r), `{"value":null,"source":{"string":"1","index":0}}`)
 })
