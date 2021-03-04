@@ -238,6 +238,13 @@ const ignored = zeroOrMore(whitespace.or(comments));
 
 let token = (pattern:RegExp) => regexp(pattern).bind((value) => ignored.and(constant(value)));
 
+let FUNCTION = token(/function\b/y)
+let IF = token(/if\b/y)
+let ELSE = token(/else\b/y)
+let RETURN = token(/return\b/y)
+let VAR = token(/var\b/y)
+let WHILE = token(/while\b/y)
+
 test("ignored:", () => {
   // NOTE: returns the last value
   let v = parse("   /* comments */ not ignored", ignored)
@@ -252,4 +259,29 @@ test("token: ignores on the RHS", () => {
 test("token: consumes on the LHS", () => {
   let v = parse("let    /* comments */ ", token(/let\b/y))
   assert(jstr(v), `{"value":"let","source":{"string":"let    /* comments */ ","index":22}}`)
+})
+
+test("token: FUNCTION", () => {
+  let v = parse("function   /* comments */ ", FUNCTION)
+  assert(jstr(v), `{"value":"function","source":{"string":"function   /* comments */ ","index":26}}`)
+})
+test("token: IF", () => {
+  let v = parse("if   /* comments */ ", IF)
+  assert(jstr(v), `{"value":"if","source":{"string":"if   /* comments */ ","index":20}}`)
+})
+test("token: ELSE", () => {
+  let v = parse("else   /* comments */ ", ELSE)
+  assert(jstr(v), `{"value":"else","source":{"string":"else   /* comments */ ","index":22}}`)
+})
+test("token: RETURN", () => {
+  let v = parse("return   /* comments */ ", RETURN)
+  assert(jstr(v), `{"value":"return","source":{"string":"return   /* comments */ ","index":24}}`)
+})
+test("token: VAR", () => {
+  let v = parse("var   /* comments */ ", VAR)
+  assert(jstr(v), `{"value":"var","source":{"string":"var   /* comments */ ","index":21}}`)
+})
+test("token: WHILE", () => {
+  let v = parse("while   /* comments */ ", WHILE)
+  assert(jstr(v), `{"value":"while","source":{"string":"while   /* comments */ ","index":23}}`)
 })
