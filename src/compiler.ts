@@ -124,7 +124,6 @@ export class Parser<T> {
   }
 }
 
-
 function parse<U>(s:string, p: Parser<U>): (ParseResult<U>|null) {
   return p.parse(new Source(s, 0))
 }
@@ -222,4 +221,35 @@ test("Parser.parseStringToCompletion:", () => {
   // NOTE: returns the last value
   let v = regexp(/\d/y).and(regexp(/\w/y)).parseStringToCompletion("1b")
   assert(v, `b`)
+})
+
+//
+// Chapter 6
+//
+const {regexp, zeroOrMore, constant} = Parser;
+
+// In JavaScript regular expressions, the dot character matches any character,
+// except newline. To implement multi-line comments, we need to match it as
+// well. It is possible to alter the meaning of the dot regular expression to
+// mean any character including newline by passing a “dot-all” flag s
+const comments = regexp(/[/][/].*/y).or(regexp(/[/][*].*[*][/]/sy));
+const whitespace = regexp(/[ \n\r\t]+/y);
+const ignored = zeroOrMore(whitespace.or(comments));
+
+let token = (pattern:RegExp) => regexp(pattern).bind((value) => ignored.and(constant(value)));
+
+test("ignored:", () => {
+  // NOTE: returns the last value
+  let v = parse("   /* comments */ not ignored", ignored)
+  assert(jstr(v), `{"value":["   ","/* comments */"," "],"source":{"string":"   /* comments */ not ignored","index":18}}`)
+})
+
+test("token: ignores on the RHS", () => {
+  let v = parse("   /* comments */ let ", token(/let\b/y))
+  assert(v, null)
+})
+
+test("token: consumes on the LHS", () => {
+  let v = parse("let    /* comments */ ", token(/let\b/y))
+  assert(jstr(v), `{"value":"let","source":{"string":"let    /* comments */ ","index":22}}`)
 })
