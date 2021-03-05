@@ -285,3 +285,179 @@ test("token: WHILE", () => {
   let v = parse("while   /* comments */ ", WHILE)
   assert(jstr(v), `{"value":"while","source":{"string":"while   /* comments */ ","index":23}}`)
 })
+
+
+//
+// Chapter 4: AST
+//
+
+interface AST { 
+  // TYPO: missed arg name
+  equals(ast: AST): boolean;
+}
+
+
+class Number implements AST {
+  constructor(public value: number) {}
+  // TYPO: missed boolean
+  equals(other: AST): boolean {
+    return true
+  }
+}
+
+class Id implements AST {
+  constructor(public value: string) { }
+  equals(other: AST): boolean { 
+    return other instanceof Id &&
+      this.value === other.value;
+  }
+}
+
+class Not implements AST {
+  constructor(public term: AST) {}
+  equals(other: AST):boolean {
+    return other instanceof Not &&
+      this.term.equals(other.term)
+  }
+}
+
+class Equal implements AST {
+  constructor(public left: AST, public right: AST) {} 
+  equals(other: AST):boolean {
+    return other instanceof Equal &&
+      this.left.equals(other.left) &&
+      this.right.equals(other.right)
+  }
+}
+class NotEqual implements AST {
+  constructor(public left: AST, public right: AST) {}
+  equals(other: AST):boolean {
+    return other instanceof NotEqual &&
+      this.left.equals(other.left) &&
+      this.right.equals(other.right)
+  }
+}
+
+class Add implements AST {
+  constructor(public left: AST, public right: AST) {}
+  equals(other: AST):boolean {
+    return other instanceof Add &&
+      this.left.equals(other.left) &&
+      this.right.equals(other.right)
+  }
+}
+class Subtract implements AST { 
+  constructor(public left: AST, public right: AST) {}
+  equals(other: AST):boolean {
+    return other instanceof Subtract &&
+      this.left.equals(other.left) &&
+      this.right.equals(other.right)
+  }
+}
+class Multiply implements AST {
+  constructor(public left: AST, public right: AST) {}
+  equals(other: AST):boolean {
+    return other instanceof Multiply &&
+      this.left.equals(other.left) &&
+      this.right.equals(other.right)
+  }
+}
+class Divide implements AST {
+  constructor(public left: AST, public right: AST) {}
+  equals(other: AST):boolean {
+    return other instanceof Divide &&
+      this.left.equals(other.left) &&
+      this.right.equals(other.right)
+  }
+}
+
+class Call implements AST {
+  constructor(public callee: string, public args: Array<AST>) {} 
+  equals(other: AST):boolean {
+    return other instanceof Call &&
+      this.callee === other.callee &&
+      this.args.length === other.args.length &&
+      this.args.every((arg, i) => arg.equals(other.args[i])); 
+  }
+}
+
+class Return implements AST {
+  constructor(public term: AST) {}
+  equals(other: AST):boolean {
+    return other instanceof Return
+      && this.term.equals(other.term)
+  }
+}
+
+class Block implements AST {
+  constructor(public statements: Array<AST>) {}
+  equals(other: AST):boolean {
+    if (!(other instanceof Block)) return false
+    if (!(this.statements.length === other.statements.length)) return false
+
+    for(let i in this.statements) {
+      if (!this.statements[i].equals(other.statements[i])) return false
+    }
+    return true
+  }
+}
+
+class If implements AST { 
+  constructor(
+    public conditional: AST,
+    public consequence: AST, 
+    public alternative: AST) {}
+
+  equals(other: AST):boolean {
+    return other instanceof If && 
+      this.conditional.equals(other.conditional) &&
+      this.consequence.equals(other.consequence) &&
+      this.alternative.equals(other.alternative)
+  } 
+}
+
+class Function implements AST {
+  constructor(
+    public name: string,
+    public parameters: Array<string>,
+    public body: AST) {}
+
+  equals(other: AST):boolean {
+    return other instanceof Function &&
+      this.name === other.name &&
+      this.parameters.length == other.parameters.length &&
+      this.parameters.every((e, i) => e === other.parameters[i]) &&
+      this.body.equals(other.body)
+   }
+}
+
+class Var implements AST {
+  constructor(public name: string, public value: AST) {}
+
+  equals(other: AST):boolean {
+    return other instanceof Var &&
+      this.name === other.name &&
+      this.value.equals(other.value)
+  }
+}
+
+
+class Assign implements AST {
+  constructor(public name: string, public value: AST) {}
+
+  equals(other: AST):boolean {
+    return other instanceof Assign &&
+      this.name === other.name &&
+      this.value.equals(other.value)
+  }
+}
+
+class While implements AST {
+  constructor(public conditional: AST, public body: AST) {}
+
+  equals(other: AST):boolean {
+    return other instanceof While &&
+      this.conditional.equals(other.conditional) &&
+      this.body.equals(other.body)
+  }
+}
