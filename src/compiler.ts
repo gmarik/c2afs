@@ -2,7 +2,14 @@
 
 let puts = console.log
 
-const jstr = JSON.stringify
+const jstr = (v:any):string => {
+  if (v instanceof ParseResult) {
+    if ((v.value instanceof Object) && typeof v.value['equals'] === 'function') {
+      return JSON.stringify({...v, value: [v.value.constructor.name, v.value]})
+    }
+  }
+  return JSON.stringify(v)
+}
 const fail   = (have:any, want:any, msg:string = "") => {
   let q = (v:any):string => {
     if (typeof v  === "undefined" || v === null) { return v; }
