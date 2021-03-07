@@ -313,8 +313,7 @@ interface AST {
   equals(ast: AST): boolean;
 }
 
-
-class Number implements AST {
+class Integer implements AST {
   constructor(public value: number) {}
   // TYPO: missed boolean
   equals(other: AST): boolean {
