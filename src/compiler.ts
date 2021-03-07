@@ -269,7 +269,7 @@ let RIGHT_PAREN = token(/[)]/y);
 let LEFT_BRACE = token(/[{]/y);
 let RIGHT_BRACE = token(/[}]/y);
 
-let NUMBER = token(/[0-9]+/y).map((digits) => new Integer(parseInt(digits)));
+let INTEGER = token(/[0-9]+/y).map((digits) => new Integer(parseInt(digits)));
 let ID = token(/[a-zA-Z_][a-zA-Z0-9_]*/y);
 let id = ID.map((x) => new Id(x));
 let NOT = token(/!/y).map((_) => Not);
@@ -321,6 +321,11 @@ test("token: WHILE", () => {
   assert(jstr(v), `{"value":"while","source":{"string":"while   /* comments */ ","index":23}}`)
 })
 
+
+test("token: INTEGER", () => {
+  let v = parse("1234", INTEGER)
+  assert(jstr(v), `{"value":["Integer",{"value":1234}],"source":{"string":"1234","index":4}}`)
+})
 
 //
 // Chapter 4: AST
