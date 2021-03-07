@@ -262,6 +262,24 @@ let RETURN = token(/return\b/y)
 let VAR = token(/var\b/y)
 let WHILE = token(/while\b/y)
 
+let COMMA = token(/[,]/y);
+let SEMICOLON = token(/;/y);
+let LEFT_PAREN = token(/[(]/y);
+let RIGHT_PAREN = token(/[)]/y);
+let LEFT_BRACE = token(/[{]/y);
+let RIGHT_BRACE = token(/[}]/y);
+
+let NUMBER = token(/[0-9]+/y).map((digits) => new Integer(parseInt(digits)));
+let ID = token(/[a-zA-Z_][a-zA-Z0-9_]*/y);
+let id = ID.map((x) => new Id(x));
+let NOT = token(/!/y).map((_) => Not);
+let EQUAL = token(/==/y).map((_) => Equal);
+let NOT_EQUAL = token(/!=/y).map((_) => NotEqual);
+let PLUS = token(/[+]/y).map((_) => Add);
+let MINUS = token(/[-]/y).map((_) => Subtract);
+let STAR = token(/[*]/y).map((_) => Multiply);
+let SLASH = token(/[/]/y).map((_) => Divide);
+
 test("ignored:", () => {
   // NOTE: returns the last value
   let v = parse("   /* comments */ not ignored", ignored)
