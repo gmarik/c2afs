@@ -16,7 +16,17 @@ const deepEqual = (a:any, b:any):boolean => { return jstr(a) === jstr(b) }
 const assert = (have:any, want:any, msg:string = "") => { if (!deepEqual(have, want)) fail(have, want, msg) }
 const refute = (have:any, want:any, msg:string = "") => { if ( deepEqual(have, want)) fail(have, want, msg) }
 
-const test = (name: string, callback: () => void) => callback();
+
+let tests = Array<[string,()=>void]>()
+const test = (name: string, callback: () => void) => tests.push([name, callback]);
+
+let runTests = () => {
+  tests.forEach((v, i) => {
+    let [n, c] = v
+    puts(n)
+    c()
+  })
+}
 
 export interface Parser<T> {
   parse(src: Source): ParseResult<T> | null;
@@ -461,3 +471,5 @@ class While implements AST {
       this.body.equals(other.body)
   }
 }
+
+runTests()
