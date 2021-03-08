@@ -243,7 +243,7 @@ test("Parser.parseStringToCompletion:", () => {
 //
 // Chapter 6
 //
-const {regexp, zeroOrMore, constant} = Parser;
+const {regexp, zeroOrMore, constant, maybe, error} = Parser;
 
 // In JavaScript regular expressions, the dot character matches any character,
 // except newline. To implement multi-line comments, we need to match it as
@@ -500,5 +500,85 @@ class While implements AST {
       this.body.equals(other.body)
   }
 }
+
+// 6.3 Grammar
+//
+// args <- (expression (COMMA expression)*)?
+// call <- ID LEFT_PAREN args RIGHT_PAREN
+// atom <- call / ID / NUMBER / LEFT_PAREN expression RIGHT_PAREN
+// unary <- NOT? atom
+// product <- unary ((STAR / SLASH) unary)*
+// sum <- product ((PLUS / MINUS) product)*
+// comparison <- sum ((EQUAL / NOT_EQUAL) sum)*
+// expression <- comparison
+
+let expression: Parser<AST> = error("expression parser used before definition");
+// However, we must remember to change this parser in-place once we define comparison and before we use it:
+// expression.parse = comparison.parse;
+
+// args <- (expression (COMMA expression)*)?
+let someArgs = (arg:AST) => zeroOrMore(COMMA.and(expression)).bind((args) => constant([arg, ...args]))
+let args: Parser<Array<AST>> = expression.bind(someArgs).or(constant([]));
+
+test("parser: args", () => {
+
+})
+
+// call <- ID LEFT_PAREN args RIGHT_PAREN
+let call: Parser<AST> = ID.bind((ident) =>
+  LEFT_PAREN.and(args.bind((args) => 
+    RIGHT_PAREN.and(constant(new Call(ident, args))))
+  )
+)
+
+test("parser: call", () => {
+
+})
+
+// atom <- call / ID / NUMBER / LEFT_PAREN expression RIGHT_PAREN
+let atom: Parser<AST> = call.or(id).or(INTEGER).or(LEFT_PAREN.and(expression).bind((e) => RIGHT_PAREN.and(constant(e))));
+
+test("parser: atom", () => {
+  let r = parse("a()", atom)
+  assert(jstr(r), `{"value":["Call",{"callee":"a","args":[]}],"source":{"string":"a()","index":3}}`)
+})
+
+
+// unary <- NOT? atom
+let unary: Parser<AST> = maybe(NOT).bind((not) => atom.map((term) => not ? new Not(term) : term)); 
+
+// product <- unary ((STAR / SLASH) unary)*
+// NOTE: this is pretty hard to parse and construct
+let p = STAR.or(SLASH)
+let _product = unary.bind((first) =>
+  zeroOrMore(STAR.or(SLASH).bind((operator) => 
+    unary.bind((term) => constant({operator, term})))
+  ).map((operatorTerms) => 
+    operatorTerms.reduce((left, {operator, term}) => 
+      new operator(left, term), first)
+  ));
+
+// NOTE: already complex even more complex
+// couldn't figure out the types of the parsers or i'd not compile
+let infix = (operatorParser:Parser<typeof Multiply>, termParser:Parser<AST>) =>
+  termParser.bind((term) =>
+    zeroOrMore(operatorParser.bind((operator) =>
+      termParser.bind((term) => constant({ operator, term })
+      ))
+    ).map((operatorTerms) =>
+      operatorTerms.reduce((left, { operator, term }) => new operator(left, term), term)
+    )
+  );
+
+
+// product <- unary ((STAR / SLASH) unary)*
+let product = infix(STAR.or(SLASH), unary);
+// sum <- product ((PLUS / MINUS) product)*
+let sum = infix(PLUS.or(MINUS), product);
+// comparison <- sum ((EQUAL / NOT_EQUAL) sum)*
+let comparison = infix(EQUAL.or(NOT_EQUAL), sum);
+// expression <- comparison
+// Closing the loop: expression
+expression.parse = comparison.parse;
 
 runTests()
