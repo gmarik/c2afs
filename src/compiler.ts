@@ -279,6 +279,8 @@ let PLUS = token(/[+]/y).map((_) => Add);
 let MINUS = token(/[-]/y).map((_) => Subtract);
 let STAR = token(/[*]/y).map((_) => Multiply);
 let SLASH = token(/[/]/y).map((_) => Divide);
+// TYPO: missing in the book
+let ASSIGN = token(/=/y).map((_) => Assign);
 
 test("ignored:", () => {
   // NOTE: returns the last value
@@ -559,7 +561,7 @@ let _product = unary.bind((first) =>
   ));
 
 // NOTE: already complex even more complex
-// couldn't figure out the types of the parsers or i'd not compile
+// couldn't figure out the types of the parsers or it'd not compile
 let infix = (operatorParser:Parser<typeof Multiply>, termParser:Parser<AST>) =>
   termParser.bind((term) =>
     zeroOrMore(operatorParser.bind((operator) =>
@@ -580,5 +582,116 @@ let comparison = infix(EQUAL.or(NOT_EQUAL), sum);
 // expression <- comparison
 // Closing the loop: expression
 expression.parse = comparison.parse;
+
+
+
+//
+// Statements
+//
+// returnStatement <- RETURN expression SEMICOLON
+// expressionStatement <- expression SEMICOLON
+// ifStatement <- IF LEFT_PAREN expression RIGHT_PAREN statement ELSE statement
+// whileStatement <- WHILE LEFT_PAREN expression RIGHT_PAREN statement
+// varStatement <- VAR ID ASSIGN expression SEMICOLON
+// assignmentStatement <- ID ASSIGN EXPRESSION SEMICOLON
+// blockStatement <- LEFT_BRACE statement* RIGHT_BRACE
+// parameters <- (ID (COMMA ID)*)?
+// functionStatement <- FUNCTION ID LEFT_PAREN parameters RIGHT_PAREN blockStatement
+// statement <- returnStatement / ifStatement
+//              / whileStatement
+//              / varStatement
+//              / assignmentStatemnt
+//              / blockStatement
+//              / functionStatement
+//              / expressionStatement
+
+let statement: Parser<AST> = Parser.error("statement parser used before definition");
+// returnStatement <- RETURN expression SEMICOLON
+let returnStatement: Parser<AST> = RETURN.and(expression).bind((term) => SEMICOLON.and(constant(new Return(term))));
+// expressionStatement <- expression SEMICOLON
+let expressionStatement: Parser<AST> = expression.bind((term) => SEMICOLON.and(constant(term)));
+
+
+// ifStatement <- IF LEFT_PAREN expression RIGHT_PAREN statement ELSE statement
+let ifStatement: Parser<AST> = IF.and(LEFT_PAREN).and(expression).bind((conditional) =>
+  RIGHT_PAREN.and(statement).bind((consequence) => 
+    ELSE.and(statement).bind((alternative) => 
+      constant(new If(conditional, consequence, alternative)))));
+
+// whileStatement <-
+// WHILE LEFT_PAREN expression RIGHT_PAREN statement
+let whileStatement: Parser<AST> = WHILE.and(LEFT_PAREN).and(expression).bind((conditional) =>
+  RIGHT_PAREN.and(statement).bind((body) => constant(new While(conditional, body))));
+
+// varStatement <-
+// VAR ID ASSIGN expression SEMICOLON
+let varStatement: Parser<AST> = VAR.and(ID).bind((name) => 
+  ASSIGN.and(expression).bind((value) => SEMICOLON.and(constant(new Var(name, value)))));
+// assignmentStatement <- ID ASSIGN EXPRESSION SEMICOLON
+let assignmentStatement: Parser<AST> = ID.bind((name) =>
+  ASSIGN.and(expression).bind((value) => SEMICOLON.and(constant(new Assign(name, value)))));
+
+// blockStatement <- LEFT_BRACE statement* RIGHT_BRACE
+let blockStatement: Parser<AST> = LEFT_BRACE.and(zeroOrMore(statement).bind((sx) => RIGHT_BRACE.and(constant(new Block(sx)))));
+
+// parameters <- (ID (COMMA ID)*)?
+let parameters: Parser<Array<string>> = ID.bind((param) => zeroOrMore(COMMA.and(ID)).bind((params) => constant([param, ...params]))).or(constant([]))
+
+// functionStatement <-
+// FUNCTION ID LEFT_PAREN parameters RIGHT_PAREN blockStatement
+let functionStatement: Parser<AST> =
+  FUNCTION.and(ID).bind((name) => 
+    LEFT_PAREN.and(parameters).bind((parameters) =>
+      RIGHT_PAREN.and(blockStatement).bind((block) => 
+        constant(new Function(name, parameters, block)))));
+
+
+let statementParser: Parser<AST> = returnStatement.
+  or(functionStatement).
+  or(ifStatement).
+  or(whileStatement).
+  or(varStatement).
+  or(assignmentStatement).
+  or(blockStatement).
+  or(expressionStatement);
+
+// closing the loop
+statement.parse = statementParser.parse;
+
+
+let parser: Parser<AST> = ignored.and(zeroOrMore(statement)).map((statements) => new Block(statements));
+
+
+let source = `
+  function factorial(n) {
+    var result = 1;
+    while (n != 1) {
+      result = result * n;
+      n = n - 1; 
+    }
+    return result;
+  }
+`;
+let expected = new Block([
+  new Function("factorial", ["n"], new Block([
+    new Var("result", new Integer(1)),
+    new While(
+      new NotEqual(new Id("n"), new Integer(1)),
+      new Block([ 
+        new Assign("result", new Multiply(new Id("result"), new Id("n"))),
+        new Assign("n", new Subtract(new Id("n"), new Integer(1))),
+      ])),
+      new Return(new Id("result")),
+    ])),
+  ]
+);
+
+// let result: Error | Number = new Error("adsf"); //parser.parseStringToCompletion(source);
+let result = parser.parseStringToCompletion(source);
+if (result instanceof Error) {
+  puts(result.message)
+} else {
+  console.assert(result.equals(expected));
+}
 
 runTests()
