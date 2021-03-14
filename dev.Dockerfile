@@ -2,6 +2,11 @@ FROM ubuntu
 
 RUN apt-get update && apt-get install -y \
   ca-certificates \
+  # cross-compilers
+  gcc-arm-linux-gnueabi binutils-arm-linux-gnueabi \
+  # executing arm32 binaries on x86 host
+  # https://azeria-labs.com/arm-on-x86-qemu-user/
+  qemu-user qemu-user-static \
   make \
   curl
 
