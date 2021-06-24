@@ -632,7 +632,7 @@ let assignmentStatement: Parser<AST> = ID.bind((name) =>
   ASSIGN.and(expression).bind((value) => SEMICOLON.and(constant(new Assign(name, value)))));
 
 // blockStatement <- LEFT_BRACE statement* RIGHT_BRACE
-let blockStatement: Parser<AST> = LEFT_BRACE.and(zeroOrMore(statement).bind((sx) => RIGHT_BRACE.and(constant(new Block(sx)))));
+let blockStatement: Parser<Block> = LEFT_BRACE.and(zeroOrMore(statement).bind((sx) => RIGHT_BRACE.and(constant(new Block(sx)))));
 
 // parameters <- (ID (COMMA ID)*)?
 let parameters: Parser<Array<string>> = ID.bind((param) => zeroOrMore(COMMA.and(ID)).bind((params) => constant([param, ...params]))).or(constant([]))
