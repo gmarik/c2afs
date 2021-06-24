@@ -336,6 +336,7 @@ test("token: INTEGER", () => {
 interface AST { 
   // TYPO: missed arg name
   equals(ast: AST): boolean;
+  emit(): void;
 }
 
 class Integer implements AST {
@@ -344,6 +345,7 @@ class Integer implements AST {
   equals(other: AST): boolean {
     return true
   }
+  emit() {/* TODO */}
 }
 
 class Id implements AST {
@@ -352,6 +354,7 @@ class Id implements AST {
     return other instanceof Id &&
       this.value === other.value;
   }
+  emit() {/* TODO */}
 }
 
 class Not implements AST {
@@ -360,6 +363,7 @@ class Not implements AST {
     return other instanceof Not &&
       this.term.equals(other.term)
   }
+  emit() {/* TODO */}
 }
 
 class Equal implements AST {
@@ -369,6 +373,7 @@ class Equal implements AST {
       this.left.equals(other.left) &&
       this.right.equals(other.right)
   }
+  emit() {/* TODO */}
 }
 class NotEqual implements AST {
   constructor(public left: AST, public right: AST) {}
@@ -377,6 +382,7 @@ class NotEqual implements AST {
       this.left.equals(other.left) &&
       this.right.equals(other.right)
   }
+  emit() {/* TODO */}
 }
 
 class Add implements AST {
@@ -386,6 +392,7 @@ class Add implements AST {
       this.left.equals(other.left) &&
       this.right.equals(other.right)
   }
+  emit() {/* TODO */}
 }
 class Subtract implements AST { 
   constructor(public left: AST, public right: AST) {}
@@ -394,6 +401,7 @@ class Subtract implements AST {
       this.left.equals(other.left) &&
       this.right.equals(other.right)
   }
+  emit() {/* TODO */}
 }
 class Multiply implements AST {
   constructor(public left: AST, public right: AST) {}
@@ -402,6 +410,7 @@ class Multiply implements AST {
       this.left.equals(other.left) &&
       this.right.equals(other.right)
   }
+  emit() {/* TODO */}
 }
 class Divide implements AST {
   constructor(public left: AST, public right: AST) {}
@@ -410,6 +419,7 @@ class Divide implements AST {
       this.left.equals(other.left) &&
       this.right.equals(other.right)
   }
+  emit() {/* TODO */}
 }
 
 class Call implements AST {
@@ -420,6 +430,7 @@ class Call implements AST {
       this.args.length === other.args.length &&
       this.args.every((arg, i) => arg.equals(other.args[i])); 
   }
+  emit() {/* TODO */}
 }
 
 class Return implements AST {
@@ -428,6 +439,7 @@ class Return implements AST {
     return other instanceof Return
       && this.term.equals(other.term)
   }
+  emit() {/* TODO */}
 }
 
 class Block implements AST {
@@ -441,6 +453,7 @@ class Block implements AST {
     }
     return true
   }
+  emit() {this.statements.forEach((statement) => statement.emit())}
 }
 
 class If implements AST { 
@@ -455,6 +468,7 @@ class If implements AST {
       this.consequence.equals(other.consequence) &&
       this.alternative.equals(other.alternative)
   } 
+  emit() {/* TODO */}
 }
 
 class Function implements AST {
@@ -470,6 +484,7 @@ class Function implements AST {
       this.parameters.every((e, i) => e === other.parameters[i]) &&
       this.body.equals(other.body)
    }
+  emit() {/* TODO */}
 }
 
 class Var implements AST {
@@ -479,18 +494,21 @@ class Var implements AST {
     return other instanceof Var &&
       this.name === other.name &&
       this.value.equals(other.value)
-  }
+  }  
+  emit() {/* TODO */}
 }
 
 
 class Assign implements AST {
   constructor(public name: string, public value: AST) {}
 
+
   equals(other: AST):boolean {
     return other instanceof Assign &&
       this.name === other.name &&
       this.value.equals(other.value)
   }
+  emit() {/* TODO */}
 }
 
 class While implements AST {
@@ -501,6 +519,7 @@ class While implements AST {
       this.conditional.equals(other.conditional) &&
       this.body.equals(other.body)
   }
+  emit() {/* TODO */}
 }
 
 // 6.3 Grammar
@@ -529,7 +548,7 @@ test("parser: args", () => {
 // call <- ID LEFT_PAREN args RIGHT_PAREN
 let call: Parser<AST> = ID.bind((ident) =>
   LEFT_PAREN.and(args.bind((args) => 
-    RIGHT_PAREN.and(constant(new Call(ident, args))))
+    RIGHT_PAREN.and(constant(ident == 'assert' ? new Assert(args[0]) : new Call(ident, args))))
   )
 )
 
@@ -640,10 +659,10 @@ let parameters: Parser<Array<string>> = ID.bind((param) => zeroOrMore(COMMA.and(
 // functionStatement <-
 // FUNCTION ID LEFT_PAREN parameters RIGHT_PAREN blockStatement
 let functionStatement: Parser<AST> =
-  FUNCTION.and(ID).bind((name) => 
+  FUNCTION.and(ID).bind((name) =>
     LEFT_PAREN.and(parameters).bind((parameters) =>
-      RIGHT_PAREN.and(blockStatement).bind((block) => 
-        constant(new Function(name, parameters, block)))));
+      RIGHT_PAREN.and(blockStatement).bind((block) =>
+        constant(name === 'main' ? new Main(block.statements) : new Function(name, parameters, block)))));
 
 
 let statementParser: Parser<AST> = returnStatement.
@@ -662,36 +681,82 @@ statement.parse = statementParser.parse;
 let parser: Parser<AST> = ignored.and(zeroOrMore(statement)).map((statements) => new Block(statements));
 
 
-let source = `
-  function factorial(n) {
-    var result = 1;
-    while (n != 1) {
-      result = result * n;
-      n = n - 1; 
+test("parser: source", () => {
+  let source = `
+    function factorial(n) {
+      var result = 1;
+      while (n != 1) {
+        result = result * n;
+        n = n - 1; 
+      }
+      return result;
     }
-    return result;
-  }
-`;
-let expected = new Block([
-  new Function("factorial", ["n"], new Block([
-    new Var("result", new Integer(1)),
-    new While(
-      new NotEqual(new Id("n"), new Integer(1)),
-      new Block([ 
-        new Assign("result", new Multiply(new Id("result"), new Id("n"))),
-        new Assign("n", new Subtract(new Id("n"), new Integer(1))),
+  `;
+  let expected = new Block([
+    new Function("factorial", ["n"], new Block([
+      new Var("result", new Integer(1)),
+      new While(
+        new NotEqual(new Id("n"), new Integer(1)),
+        new Block([ 
+          new Assign("result", new Multiply(new Id("result"), new Id("n"))),
+          new Assign("n", new Subtract(new Id("n"), new Integer(1))),
+        ])),
+        new Return(new Id("result")),
       ])),
-      new Return(new Id("result")),
-    ])),
-  ]
-);
+    ]
+  );
 
-// let result: Error | Number = new Error("adsf"); //parser.parseStringToCompletion(source);
-let result = parser.parseStringToCompletion(source);
-if (result instanceof Error) {
-  puts(result.message)
-} else {
-  console.assert(result.equals(expected));
+  // let result: Error | Number = new Error("adsf"); //parser.parseStringToCompletion(source);
+  let result = parser.parseStringToCompletion(source);
+  if (result instanceof Error) {
+    puts(result.message)
+  } else {
+    console.assert(result.equals(expected));
+  }
+
+})
+
+//
+// Chapter 8: codegen
+//
+
+let emit = puts;
+
+class Main implements AST {
+  constructor(public statements: Array<AST>) { }
+  equals(other: AST):boolean { return false }
+  emit() {
+    emit(`.global main`);
+    emit(`main:`);
+    emit(` push {fp, lr}`); 
+    this.statements.forEach( (statement) => statement.emit());
+    emit(` mov r0, #0`);
+    emit(` pop {fp, pc}`);
+  }
 }
+
+class Assert implements AST {
+  constructor(public condition: AST) { }
+  equals(other: AST):boolean { return false }
+  emit() {
+    this.condition.emit(); 
+    emit(`cmp r0, #1`); 
+    emit(`moveq r0, #'.'`); 
+    emit(`movne r0, #'F'`); 
+    emit(`bl putchar`);
+  }
+}
+
+
+test("parser: emit", () => {
+  let result = parser.parseStringToCompletion(`function main() {  }`)
+  if (result instanceof Error) {
+    puts(`error:${result.message}`)
+  } else {
+    result.emit()
+  }
+})
+
+
 
 runTests()
